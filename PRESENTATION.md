@@ -42,6 +42,35 @@ Distributed microservice fleets fail in ways that are hard to see:
 
 ---
 
+# Two Separate Components
+
+We deliberately built **two independent pieces**, not one monolith:
+
+### 1 · 🔌 The Ingestion API (FastAPI)
+The **write & detection engine**. Your servers / AI agents POST logs, metrics
+and traces over HTTP. It validates, stores, runs anomaly detection, and fires alerts.
+
+### 2 · 📊 The UI Dashboard (Streamlit)
+The **read & visualization layer**. A login-protected, human-facing view of health,
+errors, latency, infrastructure, and the alert audit trail.
+
+---
+
+# Why Two Separate Components?
+
+- 🧩 **Separation of concerns** — the write/ingest path and the human read path
+  evolve, scale, and fail independently.
+- 🌐 **The API is the integration contract** — any language, any host, even an AI
+  agent can ship logs over plain HTTP. No coupling to the UI.
+- 🛡️ **Distinct audiences & security** — services authenticate with an **API key**;
+  humans sign in with a **login gate**.
+- 🔁 **Resilience & decoupling** — the dashboard reads **directly from storage**, so
+  it still works even if the API process is down.
+- 🏢 **Mirrors enterprise reality** — ingestion pipelines (Kafka / OTel) are always
+  separate from visualization (Grafana). This split makes the production mapping 1:1.
+
+---
+
 # A Realistic Local MVP
 
 Intentionally built to **mirror an enterprise architecture** — without the operational weight.
@@ -167,6 +196,18 @@ Deterministically injected so the dashboard always tells a clear story:
 
 ---
 
+# 🛰️ System Overview
+
+![w:880](system_prints/2_landing_page.png)
+
+---
+
+# 📈 Latency Trends, Top Failing Services & Active Alerts
+
+![w:880](system_prints/3_LatencyTrends.png)
+
+---
+
 # The Dashboard — Infrastructure
 
 - 🖥️ Select one or more **servers** to observe
@@ -174,6 +215,18 @@ Deterministically injected so the dashboard always tells a clear story:
 - 🟢🟡🔴 Fleet **status table** (OK / WARN / CRITICAL)
 - A `shared-db-1` server trends toward a full disk (~97%) —
   **a hardware problem surfaced independently of app errors**
+
+---
+
+# 🖥️ Infrastructure — Fleet Overview
+
+![w:880](system_prints/5_Infrastructure_serverOverview.png)
+
+---
+
+# 📊 Hardware Time-Series (CPU / Memory / Disk)
+
+![w:840](system_prints/6_Infrasctructure_server2.png)
 
 ---
 
@@ -187,6 +240,12 @@ The watchdog's firing record answers: *"did the system alert, and when?"*
 - Same diagnostics available via `GET /dashboard/summary`
 
 🛡️ Dedup + cooldown prevent alert storms.
+
+---
+
+# 📡 Simulated Webhook Alert Deliveries
+
+![w:880](system_prints/4_Simulated_webhook.png)
 
 ---
 
@@ -239,6 +298,30 @@ Read-only endpoints stay open.
 Sign in with **admin / 123456** (override via env vars). Log out in the sidebar.
 
 ⚠️ Presentation-grade. Production → TLS, OAuth/OIDC, per-source keys, RBAC.
+
+---
+
+# 🔒 Secure Login
+
+![w:560](system_prints/1_login.png)
+
+Access to system logs is gated by a sign-in page — *Log out* lives in the sidebar.
+
+---
+
+# 🧩 API — Auto-generated OpenAPI Docs
+
+![w:840](system_prints/7_API_Server_docs.png)
+
+Everything the dashboard does is an HTTP endpoint — self-documenting at `/docs`.
+
+---
+
+# 🔑 API — Sending Logs with `X-API-Key`
+
+![w:840](system_prints/8_API_Server_sampleDocumentation.png)
+
+The integration entry point: `POST /ingest/logs` — one log or a batch.
 
 ---
 

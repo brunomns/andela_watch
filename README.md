@@ -16,7 +16,42 @@ See [docs/architecture.md](docs/architecture.md) and
 
 ---
 
+## Two separate components (and why)
+
+Andela Watch is deliberately built as **two independent elements**, not one
+monolithic app:
+
+1. **🔌 The Ingestion API (FastAPI)** — the *write & detection engine*. Your
+   servers (or an AI agent) **send their logs/metrics/traces over HTTP**; the API
+   validates and stores them, runs the anomaly-detection rules, and fires alerts.
+   This is the integration entry point — see
+   [Usage — send your logs to Andela Watch](#usage--send-your-logs-to-andela-watch).
+2. **📊 The UI Dashboard (Streamlit)** — the *read & visualization layer*. A
+   login-protected, human-facing view of service health, errors, latency,
+   infrastructure, and the alert audit trail.
+
+**Why we split it this way:**
+
+- **Separation of concerns.** The high-throughput write/ingest path and the
+  human-facing read path have different shapes, scaling needs, and failure modes;
+  keeping them apart lets each evolve and scale independently.
+- **The API is a language-agnostic integration contract.** Any service, host, or
+  AI agent can ship telemetry over plain HTTP without coupling to the UI — the
+  contract is self-documented at `/docs`.
+- **Distinct audiences and security models.** Services authenticate
+  server-to-server with an **API key** (`X-API-Key`); humans authenticate with a
+  **dashboard login gate**. See [Security & access control](#security--access-control).
+- **Resilience through decoupling.** The dashboard reads **directly from SQLite**,
+  so it keeps working even if the API process isn't running.
+- **It mirrors enterprise reality.** Production ingestion pipelines (Kafka / OTel
+  Collectors) are always separate from the visualization tier (Grafana). This split
+  makes the [enterprise mapping](#how-the-mvp-maps-to-an-enterprise-architecture)
+  a clean 1:1.
+
+---
+
 ## Table of contents
+- [Two separate components (and why)](#two-separate-components-and-why)
 - [📸 System tour](#-system-tour)
 - [Project overview](#project-overview)
 - [Architecture](#architecture)
